@@ -1,0 +1,600 @@
+<!-- !SYSTEM NOW UNDER UT CONTROL! -->
+<!-- !SYSTEM NOW UNDER UT CONTROL! -->
+
+<!-- The system has grown beyond the current staff team and needed proper management. The UT affiliates that entrust us with the GBS, and all of the games that entrust us to safely manage the GBS, are the reason ownership has been transferred from FusionX and Vex to Unknown Technologies. -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BAN REGISTRY</title>
+  <link rel="icon" type="image/x-icon" href="https://unknown-technologies.us/Img/GBS/fav_icon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <!-- highlight.js for Lua/Luau syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/lua.min.js"></script>
+  <link rel="stylesheet" href="http://unknown-technologies.us/GBS/gbs.css">
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- GROUP BULK EDIT MODAL -->
+<div class="modal-overlay" id="groupBulkEditModal">
+  <div class="modal">
+    <h2>Edit Group Ban Reason</h2>
+    <p class="sub" id="groupBulkEditSub">Update the reason for all selected groups.</p>
+    <div class="field" style="margin-bottom:12px;min-width:unset;flex:unset">
+      <label>Category</label>
+      <select id="groupBulkEditCategory" style="width:100%">
+        <option value="Exploit">Exploit</option><option value="Safety Issue">Safety Issue</option>
+        <option value="Bypass">Bypass</option><option value="Bot">Bot</option>
+        <option value="Allegations">Allegations</option><option value="Stolen Assets">Stolen Assets</option>
+        <option value="Abuse">Abuse</option><option value="General">General</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0;min-width:unset;flex:unset">
+      <label>Reason</label>
+      <input type="text" id="groupBulkEditReasonInput" placeholder="Updated reason..." style="width:100%"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red" id="groupBulkEditBtn" onclick="submitGroupBulkEdit()">Save Changes</button>
+      <button class="link-btn" onclick="document.getElementById('groupBulkEditModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- GROUP EDIT MODAL -->
+<div class="modal-overlay" id="groupEditModal">
+  <div class="modal">
+    <h2>Edit Group Ban Reason</h2>
+    <p class="sub">Update the ban reason for this group.</p>
+    <div class="field" style="margin-bottom:12px;min-width:unset;flex:unset">
+      <label>Category</label>
+      <select id="groupEditCategory" style="width:100%">
+        <option value="Exploit">Exploit</option><option value="Safety Issue">Safety Issue</option>
+        <option value="Bypass">Bypass</option><option value="Bot">Bot</option>
+        <option value="Allegations">Allegations</option><option value="Stolen Assets">Stolen Assets</option>
+        <option value="Abuse">Abuse</option><option value="General">General</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0;min-width:unset;flex:unset">
+      <label>Reason</label>
+      <input type="text" id="groupEditReasonInput" placeholder="Updated reason..." style="width:100%"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red" id="groupEditBtn" onclick="submitGroupEditReason()">Save Changes</button>
+      <button class="link-btn" onclick="document.getElementById('groupEditModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK EDIT REASON MODAL -->
+<div class="modal-overlay" id="bulkEditModal">
+  <div class="modal">
+    <h2>Edit Ban Reason</h2>
+    <p class="sub" id="bulkEditModalSub">Update the reason for all selected users.</p>
+    <div class="field" style="margin-bottom:12px;min-width:unset;flex:unset">
+      <label>Category</label>
+      <select id="bulkEditCategory" style="width:100%">
+        <option value="Exploit">Exploit</option>
+        <option value="Safety Issue">Safety Issue</option>
+        <option value="Bypass">Bypass</option>
+        <option value="Bot">Bot</option>
+        <option value="Allegations">Allegations</option>
+        <option value="Stolen Assets">Stolen Assets</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0;min-width:unset;flex:unset">
+      <label>Reason</label>
+      <input type="text" id="bulkEditReasonInput" placeholder="Updated reason..." style="width:100%"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red" id="bulkEditBtn" onclick="submitBulkEditReason()">Save Changes</button>
+      <button class="link-btn" onclick="document.getElementById('bulkEditModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT REASON MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h2>Edit Ban Reason</h2>
+    <p class="sub" id="editModalSub">Update the ban reason for this user.</p>
+    <div class="field" style="margin-bottom:12px;min-width:unset;flex:unset">
+      <label>Category</label>
+      <select id="editCategory" style="width:100%">
+        <option value="Exploit">Exploit</option>
+        <option value="Safety Issue">Safety Issue</option>
+        <option value="Bypass">Bypass</option>
+        <option value="Bot">Bot</option>
+        <option value="Allegations">Allegations</option>
+        <option value="Stolen Assets">Stolen Assets</option>
+        <option value="General">General</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0;min-width:unset;flex:unset">
+      <label>Reason</label>
+      <input type="text" id="editReasonInput" placeholder="Updated reason..." style="width:100%"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-red" id="editSubmitBtn" onclick="submitEditReason()">Save Changes</button>
+      <button class="link-btn" onclick="document.getElementById('editModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h2>Reset Password</h2>
+    <p class="sub" id="resetModalSub">Set a new password for this account.</p>
+    <form onsubmit="submitResetPassword();return false;">
+    <div class="field" style="margin-bottom:12px;min-width:unset;flex:unset">
+      <label>New Password</label>
+      <input type="password" id="resetPasswordInput" placeholder="min 6 characters" style="width:100%" autocomplete="new-password"/>
+    </div>
+    <div class="field" style="margin-bottom:0;min-width:unset;flex:unset">
+      <label>Confirm Password</label>
+      <input type="password" id="resetPasswordConfirm" placeholder="confirm password" style="width:100%" autocomplete="new-password"/>
+    </div>
+    <div class="modal-footer">
+      <button type="submit" class="btn btn-red">Reset Password</button>
+      <button type="button" class="link-btn" onclick="document.getElementById('resetModal').classList.remove('open')">Cancel</button>
+    </div>
+    </form>
+  </div>
+</div>
+
+<!-- OTP MODAL -->
+<div class="modal-overlay" id="otpModal">
+  <div class="modal">
+    <h2>Check Your Email</h2>
+    <p class="sub">We sent a 6-digit code to your email address. Enter it below to complete login.</p>
+    <div class="field" style="min-width:unset;flex:unset;margin-bottom:8px;">
+      <label>Verification Code</label>
+      <input type="text" id="otpInput" maxlength="6" placeholder="000000"
+        autocomplete="one-time-code" inputmode="numeric"
+        style="width:100%;text-align:center;font-family:var(--font-mono);font-size:28px;letter-spacing:8px;padding:14px;"
+        oninput="this.value=this.value.replace(/\D/g,''); if(this.value.length===6) submitOtp();"
+        onkeydown="if(event.key==='Enter') submitOtp();"/>
+    </div>
+    <p id="otpError" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:8px;"></p>
+    <div class="modal-footer">
+      <button class="btn btn-red" id="otpSubmitBtn" onclick="submitOtp()">Verify</button>
+      <button class="link-btn" onclick="resendOtp()" style="font-size:11px;color:var(--muted)">Resend code</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button onclick="document.getElementById('authModal').classList.remove('open')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:2px;transition:color .15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">✕</button>
+    <h2 id="modalTitle">Login</h2>
+    <p class="sub" id="modalSub">Access the Global Ban System admin panel.</p>
+    <form onsubmit="submitAuth();return false;" autocomplete="on">
+    <div class="field" id="usernameField" style="display:none">
+      <label>Username</label>
+      <input type="text" id="inputUsername" placeholder="display name" autocomplete="username"/>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="inputEmail" placeholder="admin@example.com" autocomplete="email"/>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="inputPassword" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <div id="turnstileWidget" style="margin-top:14px;display:flex;justify-content:center"></div>
+    <div class="modal-footer">
+      <button type="submit" class="btn btn-red" id="modalSubmitBtn">Login</button>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+        <button type="button" class="link-btn" onclick="toggleAuthMode()"><span id="toggleLabel">Need an account? Register</span></button>
+        <button type="button" class="link-btn" id="forgotLink" onclick="openForgotModal()" style="font-size:11px;color:var(--muted)">Forgot password?</button>
+      </div>
+    </div>
+    </form>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div class="modal-overlay" id="forgotModal">
+  <div class="modal">
+    <button onclick="closeForgotModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:2px;transition:color .15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">✕</button>
+    <h2 id="forgotTitle">Reset Password</h2>
+    <p class="sub" id="forgotSub">Enter your email and we'll send you a reset link.</p>
+    <div class="field" id="forgotEmailField" style="min-width:unset;flex:unset">
+      <label>Email</label>
+      <input type="email" id="forgotEmail" placeholder="admin@example.com" autocomplete="off" style="width:100%"/>
+    </div>
+    <div id="forgotTurnstile" style="margin-top:14px;display:flex;justify-content:center"></div>
+    <div class="modal-footer">
+      <button class="btn btn-red" id="forgotSubmitBtn" onclick="submitForgotPassword()">Send Reset Link</button>
+      <button class="link-btn" onclick="closeForgotModal()">Back to Login</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <img src="https://unknown-technologies.us/Img/GBS/fav_icon.png" alt="EbloxFiles" class="brand-logo"/>
+    <div>
+      <div class="brand-text">Ban Registry</div>
+      <div class="brand-sub">Public Archive</div>
+    </div>
+  </div>
+  <div class="navbar-right">
+    <div id="loginPrompt">
+      <button class="nav-btn primary" onclick="openModal('login')">Admin Login</button>
+    </div>
+    <div id="adminLogoutBtn" style="display:none;align-items:center;gap:8px">
+      <span style="font-size:11px;color:var(--muted)">Logged in as <span id="loggedEmail" style="color:var(--text)">—</span></span>
+      <button class="nav-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<div class="maintained-bar">
+  This system is now managed solely by <strong>Unknown Technologies</strong> and is an official UT project, currently operated and maintained by the administration team at Unknown Technologies.
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Browse <span>Banned</span> Players</h1>
+  <p>Search and explore all banned players across your games. Need the raw data? The Raw data can be found <a href="/raw">here</a>.</p>
+  <div class="archive-label">Archive Statistics</div>
+  <div class="stats">
+    <div class="stat-card total" data-filter="" onclick="filterByStatCard(this)">
+      <div class="val" id="statTotal">—</div>
+      <div class="lbl">Total Bans</div>
+    </div>
+
+    <div class="stat-card" data-filter="exploiter" onclick="filterByStatCard(this)">
+      <div class="stat-icon">⚠</div>
+      <div class="val" id="statExploiters">—</div>
+      <div class="lbl">Exploiters</div>
+    </div>
+    <div class="stat-card" data-filter="stolen" onclick="filterByStatCard(this)">
+      <div class="stat-icon">⊘</div>
+      <div class="val" id="statStolen">0</div>
+      <div class="lbl">Theft</div>
+    </div>
+    <div class="stat-card" data-filter="bypass" onclick="filterByStatCard(this)">
+      <div class="stat-icon">↗</div>
+      <div class="val" id="statBypass">0</div>
+      <div class="lbl">Bypass</div>
+    </div>
+    <div class="stat-card" data-filter="bot" onclick="filterByStatCard(this)">
+      <div class="stat-icon">⊡</div>
+      <div class="val" id="statBots">0</div>
+      <div class="lbl">Bot</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- GBS Rules panel — shown to staff before they can use the panel -->
+  <div id="rulesPanel" class="admin-panel" style="display:none">
+    <div style="font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:14px;">⚠ GBS Ban Rules — UT+ Staff</div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;font-size:13px;line-height:1.6;">
+
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:12px 16px;">
+        <div style="font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">User Ban Categories</div>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:5px;">
+          <li><span style="color:var(--red);font-weight:700;">Exploiting</span> <span style="color:var(--muted)">—</span> Use of exploits in-game</li>
+          <li><span style="color:var(--red);font-weight:700;">Asset Theft</span> <span style="color:var(--muted)">—</span> Theft of game assets</li>
+          <li><span style="color:var(--red);font-weight:700;">Safety Issue</span> <span style="color:var(--muted)">—</span> ERP accounts and similar child safety concerns</li>
+          <li><span style="color:var(--red);font-weight:700;">Bypass</span> <span style="color:var(--muted)">—</span> Username or avatar must be sexual in nature</li>
+          <li><span style="color:var(--red);font-weight:700;">Bot</span> <span style="color:var(--muted)">—</span> Automated/bot accounts</li>
+          <li><span style="color:var(--red);font-weight:700;">Allegations</span> <span style="color:var(--muted)">—</span> Must be predatory allegations only. Allegations must be proven to be true by all costs</li>
+          <li><span style="color:var(--red);font-weight:700;">Abuse</span> <span style="color:var(--muted)">—</span> Repeated history of abusing in-game systems globally across many games, or manipulating staff members of your group</li>
+        </ul>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:12px 16px;">
+        <div style="font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Restrictions</div>
+        <p style="color:var(--text);">Any users banned past <strong style="color:var(--red);">3/22/2026</strong> are <strong>not permitted</strong> to be banned for starting or engaging in general community drama or in-game rule breaking.</p>
+      </div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:12px 16px;">
+        <div style="font-family:var(--font-head);font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Group Bans</div>
+        <p style="color:var(--text);">Group bans can <strong>only</strong> be used for condo groups or groups that can be deemed a <strong style="color:var(--red);">child safety issue</strong>. Nothing else.</p>
+      </div>
+
+      <div style="background:rgba(224,48,48,.08);border:1px solid rgba(224,48,48,.3);border-radius:3px;padding:12px 16px;">
+        <p style="color:var(--red);font-weight:700;">Violation of these terms will warrant immediate removal from the GBS staff team.</p>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="btn btn-red" onclick="agreeToRules()" style="letter-spacing:1px;">
+        I Understand &amp; Agree
+      </button>
+      <span style="font-size:11px;color:var(--muted);">You must agree before using the ban panel.</span>
+    </div>
+  </div>
+
+  <!-- admin add ban panel -->
+  <div class="admin-panel" id="adminPanel" style="display:none">
+    <div class="admin-panel-title">New Ban Entry</div>
+    <div class="form-row">
+      <div class="field">
+        <label>User ID</label>
+        <input type="text" id="inUserId" placeholder="12345678, 87654321, ..."/>
+      </div>
+      <div class="field" style="flex:2">
+        <label>Reason</label>
+        <input type="text" id="inReason" placeholder="description"/>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="inCategory">
+          <option value="Exploit">Exploit</option>
+          <option value="Safety Issue">Safety Issue</option>
+          <option value="Bypass">Bypass</option>
+          <option value="Bot">Bot</option>
+          <option value="Allegations">Allegations</option>
+          <option value="Stolen Assets">Stolen Assets</option>
+          <option value="General">General</option>
+        </select>
+      </div>
+      <button class="btn btn-red" id="addBanBtn" onclick="addBan()">+ Add Ban</button>
+    </div>
+
+    <!-- Username lookup -->
+    <div style="margin-top:12px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="text" id="inLookupUsername" placeholder="Lookup by username..."
+          style="width:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;color:var(--text);font-family:var(--font-ui);font-size:13px;padding:7px 12px;outline:none;"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();lookupUser();}"/>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="lookupUser()" style="height:34px;white-space:nowrap;">⌕ Search</button>
+      </div>
+      <!-- result preview -->
+      <div id="lookupResult" style="display:none;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:8px 14px;flex:1;min-width:260px;">
+        <div class="player-avatar" style="width:40px;height:40px;flex-shrink:0;pointer-events:none;">
+          <img id="lookupAvatar" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:block;"/>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <span id="lookupName" style="font-size:13px;font-weight:600;color:var(--text);"></span>
+          <span id="lookupId" style="font-family:var(--font-mono);font-size:11px;color:var(--blue);"></span>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="useLookupId()" style="margin-left:auto;">+ Use ID</button>
+      </div>
+      <div id="lookupError" style="font-size:11px;color:var(--red);align-self:center;min-height:16px;"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px">
+      <span id="adminLoggedAs" style="font-size:11px;color:var(--muted)"></span>
+    </div>
+  </div>
+
+  <!-- group ban entry panel -->
+  <div id="groupAdminPanel" class="admin-panel" style="display:none">
+    <div class="admin-panel-title">New Group Ban Entry</div>
+    <div class="form-row">
+      <div class="field">
+        <label>Group ID(s)</label>
+        <input type="text" id="inGroupId" placeholder="12345678, 87654321, ..."/>
+      </div>
+      <div class="field" style="flex:2">
+        <label>Reason</label>
+        <input type="text" id="inGroupReason" placeholder="description"/>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="inGroupCategory" onchange="updateGroupBanBtn()">
+          <option value="Exploit">Exploit</option>
+          <option value="Safety Issue" selected>Safety Issue</option>
+          <option value="Bypass">Bypass</option>
+          <option value="Bot">Bot</option>
+          <option value="Allegations">Allegations</option>
+          <option value="Stolen Assets">Stolen Assets</option>
+          <option value="Abuse">Abuse</option>
+          <option value="General">General</option>
+        </select>
+      </div>
+      <button class="btn btn-red" id="groupBanBtn" onclick="addGroupBan()">+ Ban Group</button>
+    </div>
+  </div>
+
+  <!-- search row -->
+  <div class="search-row">
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="Search names, IDs, or any keyword..." oninput="handleSearch()"/>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <label style="font-size:11px;color:var(--muted);letter-spacing:.5px;white-space:nowrap">Category:</label>
+      <select class="category-select" id="categoryFilter" onchange="handleSearch()">
+        <option value="">All Categories</option>
+        <option value="exploiter">Exploit</option>
+        <option value="safety">Safety Issue</option>
+        <option value="bypass">Bypass</option>
+        <option value="bot">Bot</option>
+        <option value="allegations">Allegations</option>
+        <option value="stolen">Stolen Assets</option>
+        <option value="abuse">Abuse</option>
+        <option value="general">General</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="showing-label">Showing <span id="showingCount">—</span> entries</div>
+  </div>
+
+  <!-- tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('bans', this)">Ban List</button>
+    <button class="tab" onclick="switchTab('groups', this)">Group Bans</button>
+    <button class="tab" id="tabUsers" style="display:none" onclick="switchTab('users', this)">Staff Users</button>
+    <button class="tab" id="tabLogsBtn" style="display:none" onclick="switchTab('logs', this)">Audit Log</button>
+  </div>
+
+  <!-- BAN LIST TAB -->
+  <div id="tabBans">
+    <!-- bulk unban bar — only visible when items checked -->
+    <div id="bulkBar" style="display:none;align-items:center;justify-content:space-between;background:rgba(224,48,48,.08);border:1px solid rgba(224,48,48,.3);border-radius:3px;padding:10px 16px;margin-bottom:8px;">
+      <span id="bulkCount" style="font-family:var(--font-ui);font-size:12px;font-weight:700;color:var(--red);letter-spacing:.5px;"></span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Clear</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--yellow);border-color:var(--yellow)" onclick="openBulkEditModal()">Edit Reason</button>
+        <button class="btn btn-red btn-sm" onclick="bulkUnban()">Unban Selected</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th id="checkHead" style="width:0;padding:0;overflow:hidden;"></th>
+            <th>Player</th>
+            <th>User ID</th>
+            <th>Category</th>
+            <th>Reason</th>
+            <th>Banned By</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th id="actionHead" style="display:none"></th>
+          </tr>
+        </thead>
+        <tbody id="banBody">
+          <tr class="loading-row"><td colspan="8">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+  <!-- GROUP BANS TAB -->
+  <div id="tabGroupsPanel" style="display:none">
+    <div id="groupBulkBar" style="display:none;align-items:center;justify-content:space-between;background:rgba(224,48,48,.08);border:1px solid rgba(224,48,48,.3);border-radius:3px;padding:10px 16px;margin-bottom:8px;">
+      <span id="groupBulkCount" style="font-family:var(--font-ui);font-size:12px;font-weight:700;color:var(--red);letter-spacing:.5px;"></span>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="clearGroupSelection()">Clear</button>
+        <button class="btn btn-ghost btn-sm" style="color:var(--yellow);border-color:var(--yellow)" onclick="openGroupBulkEditModal()">Edit Reason</button>
+        <button class="btn btn-red btn-sm" onclick="bulkUnbanGroups()">Unban Selected</button>
+      </div>
+    </div>
+    <div class="toolbar"><div class="showing-label">Showing <span id="groupShowingCount">—</span> entries</div></div>
+    <div style="margin-bottom:12px;background:rgba(224,48,48,.06);border:1px solid rgba(224,48,48,.2);border-left:3px solid var(--red);border-radius:3px;padding:10px 16px;font-family:var(--font-ui);font-size:12px;color:var(--muted);line-height:1.5;">
+      <span style="color:var(--red);font-weight:700;letter-spacing:.5px;">POLICY —</span>
+      Group blacklists are <strong style="color:var(--text)">ONLY</strong> reserved for condo groups or groups that can be deemed a child safety issue. Nothing else.
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th id="groupCheckHead" style="width:0;padding:0;overflow:hidden;"></th>
+            <th>Group</th>
+            <th>Group ID</th>
+            <th>Category</th>
+            <th>Reason</th>
+            <th>Banned By</th>
+            <th>Date</th>
+            <th id="groupActionHead" style="display:none"></th>
+          </tr>
+        </thead>
+        <tbody id="groupBody">
+          <tr class="loading-row"><td colspan="7">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="groupPagination"></div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="tabUsersPanel" style="display:none">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th><th>Username</th><th>Status</th><th>Role</th><th>Joined</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userBody">
+          <tr class="loading-row"><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- AUDIT LOG TAB -->
+  <div id="tabLogsPanel" style="display:none">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Action</th>
+            <th>Actor</th>
+            <th>Target</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="logBody">
+          <tr class="loading-row"><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="logPagination"></div>
+  </div>
+</div>
+
+<!-- OPEN SOURCE SCRIPT SECTION -->
+<div style="max-width:1300px;margin:0 auto;padding:0 28px 80px;">
+
+  <div style="margin-top:48px;margin-bottom:20px;text-align:center;">
+    <div style="font-family:var(--font-head);font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin-bottom:8px;">Open Source</div>
+    <h2 style="font-family:var(--font-head);font-size:32px;font-weight:700;color:#fff;letter-spacing:1px;">Roblox Integration Script</h2>
+    <p style="color:var(--muted);font-size:14px;margin-top:8px;max-width:600px;margin-left:auto;margin-right:auto;">
+      Drop this script into your game's <strong style="color:var(--text)">ServerScriptService</strong> to integrate the Global Ban System. 
+      Players on the ban list will be automatically kicked on join and checked every 10 seconds.
+    </p>
+  </div>
+
+  <!-- feature pills -->
+  <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:28px;">
+    <span style="background:rgba(45,194,106,.1);border:1px solid rgba(45,194,106,.3);color:#2dc26a;font-family:var(--font-ui);font-size:11px;font-weight:700;padding:4px 12px;border-radius:2px;letter-spacing:1px;text-transform:uppercase;">DataStore Backup</span>
+    <span style="background:rgba(74,158,255,.1);border:1px solid rgba(74,158,255,.3);color:#4a9eff;font-family:var(--font-ui);font-size:11px;font-weight:700;padding:4px 12px;border-radius:2px;letter-spacing:1px;text-transform:uppercase;">Auto Failover</span>
+    <span style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);color:#a078f0;font-family:var(--font-ui);font-size:11px;font-weight:700;padding:4px 12px;border-radius:2px;letter-spacing:1px;text-transform:uppercase;">External Ban Support</span>
+    <span style="background:rgba(224,160,32,.1);border:1px solid rgba(224,160,32,.3);color:#e0a020;font-family:var(--font-ui);font-size:11px;font-weight:700;padding:4px 12px;border-radius:2px;letter-spacing:1px;text-transform:uppercase;">Rate Limit Safe</span>
+  </div>
+
+  <!-- code block -->
+  <div style="position:relative;border:1px solid var(--border2);border-radius:4px;overflow:hidden;">
+    <!-- header bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#0e0e12;padding:10px 16px;border-bottom:1px solid var(--border2);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
+        <span style="width:10px;height:10px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
+        <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block;"></span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-left:8px;">GBS_Main.lua</span>
+      </div>
+      <button onclick="copyScript()" id="copyBtn" style="background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:2px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--text)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
+        Copy
+      </button>
+    </div>
+    <!-- code -->
+    <pre style="margin:0;padding:20px 24px;background:var(--surface);overflow-x:auto;line-height:1.7;tab-size:4;"><code id="scriptCode" class="language-lua">Loading script...</code></pre>
+  </div>
+
+  <!-- usage note -->
+  <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border2);border-left:3px solid var(--blue);border-radius:3px;padding:14px 18px;font-size:12px;color:var(--muted);font-family:var(--font-ui);">
+    <span style="color:var(--blue);font-weight:700;letter-spacing:.5px;">NOTE —</span>
+    This script fetches the ban list from <span style="color:var(--text);font-family:var(--font-mono);">https://database.unknown-technologies.us/api/BannedUsersAPI.json</span> and caches it in your game's DataStore automatically. Enable <span style="color:var(--text);font-family:var(--font-mono);">HTTP Requests</span> in your game settings under Security before using.
+  </div>
+
+</div>
+
+<script src="http://unknown-technologies.us/GBS/gbs.js?v=3"></script>
+</body>
+</html>
