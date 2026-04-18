@@ -3,16 +3,14 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BAN REGISTRY</title>
-  <link rel="icon" type="image/x-icon" href="https://unknown-technologies.us/Img/GBS/fav_icon.ico">
+  <title>Moderation Registry</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <!-- highlight.js for Lua/Luau syntax highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/languages/lua.min.js"></script>
-  <link rel="stylesheet" href="http://unknown-technologies.us/GBS/gbs.css">
+  <link rel="stylesheet" href="/gbs.css">
 </head>
 <body>
 <div id="toast"></div>
@@ -145,33 +143,12 @@
   </div>
 </div>
 
-<!-- OTP MODAL -->
-<div class="modal-overlay" id="otpModal">
-  <div class="modal">
-    <h2>Check Your Email</h2>
-    <p class="sub">We sent a 6-digit code to your email address. Enter it below to complete login.</p>
-    <div class="field" style="min-width:unset;flex:unset;margin-bottom:8px;">
-      <label>Verification Code</label>
-      <input type="text" id="otpInput" maxlength="6" placeholder="000000"
-        autocomplete="one-time-code" inputmode="numeric"
-        style="width:100%;text-align:center;font-family:var(--font-mono);font-size:28px;letter-spacing:8px;padding:14px;"
-        oninput="this.value=this.value.replace(/\D/g,''); if(this.value.length===6) submitOtp();"
-        onkeydown="if(event.key==='Enter') submitOtp();"/>
-    </div>
-    <p id="otpError" style="font-size:11px;color:var(--red);min-height:16px;margin-bottom:8px;"></p>
-    <div class="modal-footer">
-      <button class="btn btn-red" id="otpSubmitBtn" onclick="submitOtp()">Verify</button>
-      <button class="link-btn" onclick="resendOtp()" style="font-size:11px;color:var(--muted)">Resend code</button>
-    </div>
-  </div>
-</div>
-
 <!-- AUTH MODAL -->
 <div class="modal-overlay" id="authModal">
   <div class="modal">
     <button onclick="document.getElementById('authModal').classList.remove('open')" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:2px;transition:color .15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">✕</button>
     <h2 id="modalTitle">Login</h2>
-    <p class="sub" id="modalSub">Access the Global Ban System admin panel.</p>
+    <p class="sub" id="modalSub">Access the moderation admin panel.</p>
     <form onsubmit="submitAuth();return false;" autocomplete="on">
     <div class="field" id="usernameField" style="display:none">
       <label>Username</label>
@@ -185,43 +162,23 @@
       <label>Password</label>
       <input type="password" id="inputPassword" placeholder="••••••••" autocomplete="current-password"/>
     </div>
-    <div id="turnstileWidget" style="margin-top:14px;display:flex;justify-content:center"></div>
     <div class="modal-footer">
       <button type="submit" class="btn btn-red" id="modalSubmitBtn">Login</button>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
         <button type="button" class="link-btn" onclick="toggleAuthMode()"><span id="toggleLabel">Need an account? Register</span></button>
-        <button type="button" class="link-btn" id="forgotLink" onclick="openForgotModal()" style="font-size:11px;color:var(--muted)">Forgot password?</button>
       </div>
     </div>
     </form>
   </div>
 </div>
 
-<!-- FORGOT PASSWORD MODAL -->
-<div class="modal-overlay" id="forgotModal">
-  <div class="modal">
-    <button onclick="closeForgotModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:2px 6px;border-radius:2px;transition:color .15s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">✕</button>
-    <h2 id="forgotTitle">Reset Password</h2>
-    <p class="sub" id="forgotSub">Enter your email and we'll send you a reset link.</p>
-    <div class="field" id="forgotEmailField" style="min-width:unset;flex:unset">
-      <label>Email</label>
-      <input type="email" id="forgotEmail" placeholder="admin@example.com" autocomplete="off" style="width:100%"/>
-    </div>
-    <div id="forgotTurnstile" style="margin-top:14px;display:flex;justify-content:center"></div>
-    <div class="modal-footer">
-      <button class="btn btn-red" id="forgotSubmitBtn" onclick="submitForgotPassword()">Send Reset Link</button>
-      <button class="link-btn" onclick="closeForgotModal()">Back to Login</button>
-    </div>
-  </div>
-</div>
-
 <!-- NAVBAR -->
 <nav class="navbar">
   <div class="navbar-brand">
-    <img src="https://unknown-technologies.us/Img/GBS/fav_icon.png" alt="EbloxFiles" class="brand-logo"/>
+    <div class="brand-mark" aria-hidden="true">MR</div>
     <div>
-      <div class="brand-text">Ban Registry</div>
-      <div class="brand-sub">Public Archive</div>
+      <div class="brand-text">Moderation Registry</div>
+      <div class="brand-sub">Standalone Archive</div>
     </div>
   </div>
   <div class="navbar-right">
@@ -236,14 +193,14 @@
 </nav>
 
 <div class="maintained-bar">
-  This system is now managed solely by <strong>Unknown Technologies</strong> and is an official UT project, currently operated and maintained by the administration team at Unknown Technologies.
+  Standalone moderation data for your community. Local by default, portable when you need it.
 </div>
 
 <!-- HERO -->
 <div class="hero">
-  <h1>Browse <span>Banned</span> Players</h1>
-  <p>Search and explore all banned players across your games. Need the raw data? The Raw data can be found <a href="/raw">here</a>.</p>
-  <div class="archive-label">Archive Statistics</div>
+  <h1>Review <span>Moderation</span> Records</h1>
+  <p>Search user and group records, review categories, and manage entries from one local dashboard. Raw data is available <a href="/BannedUsers.json">here</a>.</p>
+  <div class="archive-label">Registry Snapshot</div>
   <div class="stats">
     <div class="stat-card total" data-filter="" onclick="filterByStatCard(this)">
       <div class="val" id="statTotal">—</div>
@@ -276,9 +233,9 @@
 <!-- MAIN -->
 <div class="main">
 
-  <!-- GBS Rules panel — shown to staff before they can use the panel -->
+  <!-- Rules panel — shown to staff before they can use the panel -->
   <div id="rulesPanel" class="admin-panel" style="display:none">
-    <div style="font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:14px;">⚠ GBS Ban Rules — UT+ Staff</div>
+    <div style="font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:14px;">Registry Rules</div>
 
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;font-size:13px;line-height:1.6;">
 
@@ -305,8 +262,8 @@
         <p style="color:var(--text);">Group bans can <strong>only</strong> be used for condo groups or groups that can be deemed a <strong style="color:var(--red);">child safety issue</strong>. Nothing else.</p>
       </div>
 
-      <div style="background:rgba(224,48,48,.08);border:1px solid rgba(224,48,48,.3);border-radius:3px;padding:12px 16px;">
-        <p style="color:var(--red);font-weight:700;">Violation of these terms will warrant immediate removal from the GBS staff team.</p>
+      <div style="background:rgba(15,139,141,.10);border:1px solid rgba(15,139,141,.25);border-radius:8px;padding:12px 16px;">
+        <p style="color:var(--red);font-weight:700;">Violation of these terms can result in removal from the moderation team.</p>
       </div>
     </div>
 
@@ -437,7 +394,7 @@
   <!-- BAN LIST TAB -->
   <div id="tabBans">
     <!-- bulk unban bar — only visible when items checked -->
-    <div id="bulkBar" style="display:none;align-items:center;justify-content:space-between;background:rgba(224,48,48,.08);border:1px solid rgba(224,48,48,.3);border-radius:3px;padding:10px 16px;margin-bottom:8px;">
+    <div id="bulkBar" style="display:none;align-items:center;justify-content:space-between;background:rgba(15,139,141,.10);border:1px solid rgba(15,139,141,.25);border-radius:8px;padding:10px 16px;margin-bottom:8px;">
       <span id="bulkCount" style="font-family:var(--font-ui);font-size:12px;font-weight:700;color:var(--red);letter-spacing:.5px;"></span>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost btn-sm" onclick="clearSelection()">Clear</button>
@@ -470,7 +427,7 @@
 
   <!-- GROUP BANS TAB -->
   <div id="tabGroupsPanel" style="display:none">
-    <div id="groupBulkBar" style="display:none;align-items:center;justify-content:space-between;background:rgba(224,48,48,.08);border:1px solid rgba(224,48,48,.3);border-radius:3px;padding:10px 16px;margin-bottom:8px;">
+    <div id="groupBulkBar" style="display:none;align-items:center;justify-content:space-between;background:rgba(15,139,141,.10);border:1px solid rgba(15,139,141,.25);border-radius:8px;padding:10px 16px;margin-bottom:8px;">
       <span id="groupBulkCount" style="font-family:var(--font-ui);font-size:12px;font-weight:700;color:var(--red);letter-spacing:.5px;"></span>
       <div style="display:flex;gap:8px;">
         <button class="btn btn-ghost btn-sm" onclick="clearGroupSelection()">Clear</button>
@@ -479,7 +436,7 @@
       </div>
     </div>
     <div class="toolbar"><div class="showing-label">Showing <span id="groupShowingCount">—</span> entries</div></div>
-    <div style="margin-bottom:12px;background:rgba(224,48,48,.06);border:1px solid rgba(224,48,48,.2);border-left:3px solid var(--red);border-radius:3px;padding:10px 16px;font-family:var(--font-ui);font-size:12px;color:var(--muted);line-height:1.5;">
+    <div style="margin-bottom:12px;background:rgba(15,139,141,.08);border:1px solid rgba(15,139,141,.2);border-left:3px solid var(--red);border-radius:8px;padding:10px 16px;font-family:var(--font-ui);font-size:12px;color:var(--muted);line-height:1.5;">
       <span style="color:var(--red);font-weight:700;letter-spacing:.5px;">POLICY —</span>
       Group blacklists are <strong style="color:var(--text)">ONLY</strong> reserved for condo groups or groups that can be deemed a child safety issue. Nothing else.
     </div>
@@ -548,9 +505,9 @@
 
   <div style="margin-top:48px;margin-bottom:20px;text-align:center;">
     <div style="font-family:var(--font-head);font-size:13px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--red);margin-bottom:8px;">Open Source</div>
-    <h2 style="font-family:var(--font-head);font-size:32px;font-weight:700;color:#fff;letter-spacing:1px;">Roblox Integration Script</h2>
+    <h2 style="font-family:var(--font-head);font-size:32px;font-weight:700;color:var(--text);letter-spacing:0;">Roblox Integration Script</h2>
     <p style="color:var(--muted);font-size:14px;margin-top:8px;max-width:600px;margin-left:auto;margin-right:auto;">
-      Drop this script into your game's <strong style="color:var(--text)">ServerScriptService</strong> to integrate the Global Ban System. 
+      Drop this script into your game's <strong style="color:var(--text)">ServerScriptService</strong> to integrate the registry.
       Players on the ban list will be automatically kicked on join and checked every 10 seconds.
     </p>
   </div>
@@ -566,12 +523,12 @@
   <!-- code block -->
   <div style="position:relative;border:1px solid var(--border2);border-radius:4px;overflow:hidden;">
     <!-- header bar -->
-    <div style="display:flex;align-items:center;justify-content:space-between;background:#0e0e12;padding:10px 16px;border-bottom:1px solid var(--border2);">
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#eef3f7;padding:10px 16px;border-bottom:1px solid var(--border2);">
       <div style="display:flex;align-items:center;gap:8px;">
         <span style="width:10px;height:10px;border-radius:50%;background:#ff5f57;display:inline-block;"></span>
         <span style="width:10px;height:10px;border-radius:50%;background:#ffbd2e;display:inline-block;"></span>
         <span style="width:10px;height:10px;border-radius:50%;background:#28c840;display:inline-block;"></span>
-        <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-left:8px;">GBS_Main.lua</span>
+        <span style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-left:8px;">ModerationRegistry.lua</span>
       </div>
       <button onclick="copyScript()" id="copyBtn" style="background:transparent;border:1px solid var(--border2);color:var(--muted);font-family:var(--font-ui);font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:2px;cursor:pointer;transition:all .15s;" onmouseover="this.style.borderColor='var(--text)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border2)';this.style.color='var(--muted)'">
         Copy
@@ -584,11 +541,11 @@
   <!-- usage note -->
   <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border2);border-left:3px solid var(--blue);border-radius:3px;padding:14px 18px;font-size:12px;color:var(--muted);font-family:var(--font-ui);">
     <span style="color:var(--blue);font-weight:700;letter-spacing:.5px;">NOTE —</span>
-    This script fetches the ban list from <span style="color:var(--text);font-family:var(--font-mono);">https://database.unknown-technologies.us/api/BannedUsersAPI.json</span> and caches it in your game's DataStore automatically. Enable <span style="color:var(--text);font-family:var(--font-mono);">HTTP Requests</span> in your game settings under Security before using.
+    This script fetches user bans from <span style="color:var(--text);font-family:var(--font-mono);">/BannedUsers.json</span> and group bans from <span style="color:var(--text);font-family:var(--font-mono);">/BannedGroups.json</span>, then caches both in your game's DataStore automatically. Enable <span style="color:var(--text);font-family:var(--font-mono);">HTTP Requests</span> in your game settings under Security before using.
   </div>
 
 </div>
 
-<script src="http://unknown-technologies.us/GBS/gbs.js?v=3"></script>
+<script src="/gbs.js"></script>
 </body>
 </html>

@@ -1,17 +1,18 @@
 """
-GBSFrontendServer.py — Serves index.html on port 2949, proxies the
-ban list JSON from Netlify, and reverse-proxies all /gbs/* API calls
-to the backend with the X-GBS-Key header injected server-side.
+GBSFrontendServer.py — Serves GBS.html on port 2949 and reverse-proxies
+all /gbs/* API calls to the local backend.
 
 Routes:
-  GET  /                    — serves GBS.html (Turnstile key injected)
-  GET  /BannedUsers.json    — proxies BannedUsersAPI.json from Netlify (cached)
-  ANY  /gbs/*               — reverse-proxies to GBS backend with API key
+  GET  /                    — serves GBS.html
+  GET  /gbs.css             — serves local stylesheet
+  GET  /gbs.js              — serves local JavaScript
+  GET  /BannedUsers.json    — reads user bans from the backend
+  GET  /BannedGroups.json   — reads group bans from the backend
+  ANY  /gbs/*               — reverse-proxies to GBS backend
 
 Environment variables:
-  TURNSTILE_SITE_KEY   — Cloudflare Turnstile site key (injected into HTML)
-  GBS_BACKEND_URL      — backend base URL (default: https://api.unknown-technologies.us)
-  GBS_API_KEY          — shared secret injected as X-GBS-Key on every /gbs/* request
+  GBS_BACKEND_URL      — backend base URL (default: http://127.0.0.1:8000)
+  REGISTRY_API_KEY     — optional shared secret injected as X-GBS-Key on /gbs/* requests
 """
 
 import os
@@ -20,14 +21,15 @@ import httpx
 import uvicorn
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, Response, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 # ── Config ────────────────────────────────────────────────────────────────────
-TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY", "")
-GBS_BACKEND_URL    = os.environ.get("GBS_BACKEND_URL", "https://api.unknown-technologies.us")
-GBS_API_KEY        = os.environ.get("GBS_API_KEY", "")
-UPSTREAM_JSON_URL  = "https://database.unknown-technologies.us/api/BannedUsersAPI.json"
+GBS_BACKEND_URL    = os.environ.get("GBS_BACKEND_URL", "http://127.0.0.1:8000")
+GBS_API_KEY        = os.environ.get("REGISTRY_API_KEY", os.environ.get("GBS_API_KEY", ""))
 CACHE_TTL_SECONDS  = 30
 _HTML_PATH   = os.path.join(os.path.dirname(__file__), "GBS.html")
 _RAW_PATH    = os.path.join(os.path.dirname(__file__), "GBS_Raw.html")
@@ -38,22 +40,22 @@ _JS_PATH     = os.path.join(os.path.dirname(__file__), "gbs.js")
 FrontendApp = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
 # ── In-memory JSON cache ──────────────────────────────────────────────────────
-_cache: dict = {"data": None, "fetched_at": 0.0}
+_cache: dict = {
+    "users": {"data": None, "fetched_at": 0.0},
+    "groups": {"data": None, "fetched_at": 0.0},
+}
 
 # ── HTML builder ──────────────────────────────────────────────────────────────
 def _build_html() -> str:
     with open(_HTML_PATH, encoding="utf-8") as f:
         html = f.read()
-    site_key  = os.environ.get("TURNSTILE_SITE_KEY", "")
-    print(f"[GBSFrontend] Site key: '{site_key}'")
-    print(f"[GBSFrontend] <body> found: {'<body>' in html}")
-    injection = f'<script>window.__GBS_SITE_KEY__ = "{site_key}";</script>'
+    injection = '<script>window.__GBS_API_BASE__ = "/gbs";</script>'
     return html.replace("<body>", f"<body>\n{injection}", 1)
 
 FrontendApp.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -63,43 +65,53 @@ async def serve_index():
     return HTMLResponse(_build_html())
 
 
+@FrontendApp.get("/gbs.css")
+async def serve_css():
+    return FileResponse(_CSS_PATH, media_type="text/css")
+
+
+@FrontendApp.get("/gbs.js")
+async def serve_js():
+    return FileResponse(_JS_PATH, media_type="application/javascript")
+
+
 @FrontendApp.get("/raw", response_class=HTMLResponse)
 async def serve_raw():
-    with open(_RAW_PATH, encoding="utf-8") as f:
+    raw_path = _RAW_PATH if os.path.exists(_RAW_PATH) else _HTML_PATH
+    with open(raw_path, encoding="utf-8") as f:
         return HTMLResponse(f.read())
-
-
-@FrontendApp.get("/verify/{token}")
-async def verify_redirect(token: str):
-    """Forward email verification clicks to the backend then redirect home."""
-    target = f"{GBS_BACKEND_URL.rstrip('/')}/gbs/auth/verify/{token}"
-    async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
-        r = await client.get(target)
-    # Backend returns a RedirectResponse — forward it
-    location = r.headers.get("location", "/")
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=location, status_code=302)
 
 
 @FrontendApp.get("/BannedUsers.json")
 async def banned_users_proxy():
-    """Proxies & caches BannedUsersAPI.json from Netlify."""
+    """Proxies & caches the backend ban list as a plain JSON list."""
+    return await _cached_backend_list("users", "/bans", "bans")
+
+
+@FrontendApp.get("/BannedGroups.json")
+async def banned_groups_proxy():
+    """Proxies & caches the backend group ban list as a plain JSON list."""
+    return await _cached_backend_list("groups", "/groups", "groups")
+
+
+async def _cached_backend_list(cache_key: str, path: str, response_key: str):
     now = time.monotonic()
-    if _cache["data"] is not None and (now - _cache["fetched_at"]) < CACHE_TTL_SECONDS:
-        return JSONResponse(content=_cache["data"])
+    cache = _cache[cache_key]
+    if cache["data"] is not None and (now - cache["fetched_at"]) < CACHE_TTL_SECONDS:
+        return JSONResponse(content=cache["data"])
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.get(UPSTREAM_JSON_URL)
+            resp = await client.get(f"{GBS_BACKEND_URL.rstrip('/')}{path}")
             resp.raise_for_status()
-            data = resp.json()
+            data = resp.json().get(response_key, [])
     except Exception as exc:
-        if _cache["data"] is not None:
+        if cache["data"] is not None:
             print(f"[GBSFrontend] Upstream error ({exc}), serving stale cache")
-            return JSONResponse(content=_cache["data"])
+            return JSONResponse(content=cache["data"])
         return JSONResponse(content={"detail": f"Upstream unavailable: {exc}"}, status_code=502)
-    _cache["data"]       = data
-    _cache["fetched_at"] = now
-    print(f"[GBSFrontend] Synced {len(data) if isinstance(data, list) else '?'} records from upstream")
+    cache["data"]       = data
+    cache["fetched_at"] = now
+    print(f"[GBSFrontend] Synced {len(data) if isinstance(data, list) else '?'} {cache_key} records from backend")
     return JSONResponse(content=data)
 
 
@@ -109,7 +121,7 @@ async def gbs_proxy(path: str, request: Request):
     Reverse-proxy all /gbs/* requests to the backend, injecting X-GBS-Key
     server-side so the browser never sees or needs to know the key.
     """
-    target_url = f"{GBS_BACKEND_URL.rstrip('/')}/gbs/{path}"
+    target_url = f"{GBS_BACKEND_URL.rstrip('/')}/{path}"
 
     # Forward original query string
     if request.url.query:
@@ -150,49 +162,41 @@ _404_HTML = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>404 — BAN REGISTRY</title>
-  <link rel="icon" type="image/x-icon" href="https://unknown-technologies.us/Img/GBS/fav_icon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>404 - Moderation Registry</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{background:#0c0c0e;color:#d0d4dc;font-family:'Barlow Condensed',sans-serif;
+    body{background:#f6f8fb;color:#1f2933;font-family:'Inter',sans-serif;
          min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
-    body::after{content:'';pointer-events:none;position:fixed;inset:0;
-      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-      opacity:.028;z-index:9999}
     nav{display:flex;align-items:center;justify-content:space-between;padding:0 28px;
-        height:48px;background:#0e0e12;border-bottom:1px solid #222228;position:sticky;top:0;z-index:100}
+        height:64px;background:#fff;border-bottom:1px solid #d7e0e7;position:sticky;top:0;z-index:100;
+        box-shadow:0 12px 30px rgba(31,41,51,.08)}
     .brand{display:flex;align-items:center;gap:10px}
-    .brand img{width:36px;height:36px;object-fit:contain}
-    .brand-text{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:16px;
-                letter-spacing:2px;text-transform:uppercase;color:#fff}
-    .brand-sub{font-size:10px;color:#5a6070;letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+    .mark{width:38px;height:38px;border-radius:8px;background:#0f8b8d;color:#fff;display:grid;place-items:center;
+          font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:800}
+    .brand-text{font-weight:800;font-size:15px;color:#1f2933}
+    .brand-sub{font-size:11px;color:#607080;margin-top:1px}
     .main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-          padding:40px 20px;text-align:center;
-          background:radial-gradient(ellipse 70% 60% at 50% 40%,rgba(224,48,48,.06) 0%,transparent 70%)}
-    .code{font-family:'Rajdhani',sans-serif;font-size:120px;font-weight:700;
-          color:#e03030;line-height:1;letter-spacing:4px;
-          text-shadow:0 0 80px rgba(224,48,48,.3)}
-    .label{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:600;
-           letter-spacing:3px;text-transform:uppercase;color:#fff;margin-top:8px}
-    .sub{color:#5a6070;font-size:14px;margin-top:10px;max-width:420px;line-height:1.6}
+          padding:40px 20px;text-align:center}
+    .code{font-size:112px;font-weight:800;color:#0f8b8d;line-height:1}
+    .label{font-size:24px;font-weight:800;color:#1f2933;margin-top:8px}
+    .sub{color:#607080;font-size:14px;margin-top:10px;max-width:420px;line-height:1.6}
     .back{display:inline-flex;align-items:center;gap:8px;margin-top:32px;
-          padding:10px 24px;font-family:'Barlow Condensed',sans-serif;font-size:13px;
-          font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;
-          border:1px solid #2a2a32;border-radius:3px;color:#d0d4dc;background:#111115;
+          padding:10px 24px;font-size:13px;font-weight:700;text-decoration:none;
+          border:1px solid #c5d1da;border-radius:8px;color:#1f2933;background:#fff;
           transition:all .15s}
-    .back:hover{border-color:#e03030;color:#e03030}
-    footer{text-align:center;padding:16px;font-size:11px;color:#3a3f4a;
-           border-top:1px solid #222228;letter-spacing:.5px}
+    .back:hover{border-color:#0f8b8d;color:#0f8b8d}
+    footer{text-align:center;padding:16px;font-size:11px;color:#607080;
+           border-top:1px solid #d7e0e7}
   </style>
 </head>
 <body>
   <nav>
     <div class="brand">
-      <img src="https://unknown-technologies.us/Img/GBS/fav_icon.png" alt="GBS"/>
+      <div class="mark">MR</div>
       <div>
-        <div class="brand-text">Ban Registry</div>
-        <div class="brand-sub">Unknown Technologies+</div>
+        <div class="brand-text">Moderation Registry</div>
+        <div class="brand-sub">Standalone Archive</div>
       </div>
     </div>
   </nav>
@@ -200,9 +204,9 @@ _404_HTML = """<!DOCTYPE html>
     <div class="code">404</div>
     <div class="label">Page Not Found</div>
     <p class="sub">The page you're looking for doesn't exist or has been moved.</p>
-    <a href="/" class="back">← Back to Ban Registry</a>
+    <a href="/" class="back">Back to Registry</a>
   </div>
-  <footer>Managed by Unknown Technologies+</footer>
+  <footer>Standalone moderation archive</footer>
 </body>
 </html>"""
 
@@ -214,7 +218,7 @@ async def catch_all(path: str):
 # ── Entry point ───────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     print(f"[GBSFrontend] Serving on http://0.0.0.0:2949")
-    print(f"[GBSFrontend] Backend proxy: /gbs/* -> {GBS_BACKEND_URL}/gbs/*")
-    print(f"[GBSFrontend] JSON proxy:    /BannedUsers.json -> {UPSTREAM_JSON_URL}")
-    print(f"[GBSFrontend] API key set:   {'yes' if GBS_API_KEY else 'NO — set GBS_API_KEY'}")
+    print(f"[GBSFrontend] Backend proxy: /gbs/* -> {GBS_BACKEND_URL}/*")
+    print(f"[GBSFrontend] JSON proxy:    /BannedUsers.json -> backend /bans")
+    print(f"[GBSFrontend] API key set:   {'yes' if GBS_API_KEY else 'not required'}")
     uvicorn.run(FrontendApp, host="0.0.0.0", port=2949, log_level="info")

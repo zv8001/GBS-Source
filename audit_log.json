@@ -1,0 +1,73 @@
+[
+  {
+    "timestamp": "2026-04-18T09:35:24.961392Z",
+    "action": "auth.register",
+    "actor": "VexThatProtogen",
+    "target": "denverv1000@gmail.com",
+    "detail": "auto-approved as first user"
+  },
+  {
+    "timestamp": "2026-04-18T09:36:20.340213Z",
+    "action": "auth.login",
+    "actor": "VexThatProtogen",
+    "target": "denverv1000@gmail.com"
+  },
+  {
+    "timestamp": "2026-04-18T09:53:58.930098Z",
+    "action": "auth.login",
+    "actor": "VexThatProtogen",
+    "target": "denverv1000@gmail.com"
+  },
+  {
+    "timestamp": "2026-04-18T09:54:10.297619Z",
+    "action": "ban.add",
+    "actor": "VexThatProtogen",
+    "target": "235983",
+    "detail": "[Exploit] nope"
+  },
+  {
+    "timestamp": "2026-04-18T09:54:41.639772Z",
+    "action": "group.ban.add",
+    "actor": "VexThatProtogen",
+    "target": "43535345",
+    "detail": "[Safety Issue] dfghdsfh"
+  },
+  {
+    "timestamp": "2026-04-18T09:59:40.634266Z",
+    "action": "ban.add",
+    "actor": "VexThatProtogen",
+    "target": "4071774573",
+    "detail": "[Exploit] Test"
+  },
+  {
+    "timestamp": "2026-04-18T10:02:14.617502Z",
+    "action": "auth.login",
+    "actor": "VexThatProtogen",
+    "target": "denverv1000@gmail.com"
+  },
+  {
+    "timestamp": "2026-04-18T10:02:20.158626Z",
+    "action": "ban.remove",
+    "actor": "VexThatProtogen",
+    "target": "235983"
+  },
+  {
+    "timestamp": "2026-04-18T10:02:22.615011Z",
+    "action": "ban.remove",
+    "actor": "VexThatProtogen",
+    "target": "4071774573"
+  },
+  {
+    "timestamp": "2026-04-18T10:02:40.473452Z",
+    "action": "ban.add",
+    "actor": "VexThatProtogen",
+    "target": "4071774573",
+    "detail": "[Exploit] Test"
+  },
+  {
+    "timestamp": "2026-04-18T10:06:53.081417Z",
+    "action": "ban.remove",
+    "actor": "VexThatProtogen",
+    "target": "4071774573"
+  }
+]

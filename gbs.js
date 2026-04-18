@@ -1,12 +1,10 @@
 // ── CONFIG ──────────────────────────────────────────────────────────────────
-const API            = "https://api.unknown-technologies.us/gbs";
+const API            = window.__GBS_API_BASE__ || "/gbs";
 const ROPROXY_USERS  = "https://users.roproxy.com";
 const ROPROXY_THUMB  = "https://thumbnails.roproxy.com";
-const TURNSTILE_KEY  = window.__GBS_SITE_KEY__ || "";
 const PAGE_SIZE      = 25;
 
 // ── STATE ────────────────────────────────────────────────────────────────────
-let token         = localStorage.getItem("gbs_token") || null;
 let currentUser   = null;
 let fullBanList   = [];
 let filteredList  = [];
@@ -44,89 +42,10 @@ async function fetchRobloxInfo(userIds) {
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 async function init() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('verified') === '1') {
-    window.history.replaceState({}, '', '/');
-    setTimeout(() => toast('Email verified! Your account is pending admin approval.', 'success'), 300);
-  }
-  const resetToken = params.get('reset_token');
-  if (resetToken) {
-    window.history.replaceState({}, '', '/');
-    openPasswordResetModal(resetToken);
-  }
   var _sc = document.querySelector('.stat-card[data-filter=""]'); if (_sc) _sc.classList.add('active');
   await loadStats();
   await loadBans();
-  if (token) await fetchMe();
-}
-
-// ── SELF-SERVICE PASSWORD RESET ─────────────────────────────────────────────
-let selfResetToken = null;
-
-function openPasswordResetModal(tok) {
-  selfResetToken = tok;
-  document.getElementById('forgotTitle').textContent        = 'Set New Password';
-  document.getElementById('forgotSub').textContent          = 'Enter your new password below.';
-  document.getElementById('forgotEmailField').style.display = 'none';
-  document.getElementById('forgotTurnstile').innerHTML      = '';
-  document.getElementById('forgotEmailField').insertAdjacentHTML('afterend', `
-    <div id="selfResetFields" style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
-      <div class="field" style="min-width:unset;flex:unset;margin-bottom:0">
-        <label>New Password</label>
-        <input type="password" id="selfResetPw" placeholder="min 6 characters" style="width:100%"/>
-      </div>
-      <div class="field" style="min-width:unset;flex:unset;margin-bottom:0">
-        <label>Confirm Password</label>
-        <input type="password" id="selfResetPwConfirm" placeholder="confirm password" style="width:100%"/>
-      </div>
-    </div>
-  `);
-  document.getElementById('forgotSubmitBtn').textContent = 'Set Password';
-  document.getElementById('forgotSubmitBtn').onclick     = submitSelfReset;
-  document.getElementById('forgotSubmitBtn').style.display = '';
-  document.getElementById('forgotModal').classList.add('open');
-}
-
-async function submitSelfReset() {
-  const pw  = document.getElementById('selfResetPw').value;
-  const pw2 = document.getElementById('selfResetPwConfirm').value;
-  if (!pw)           return toast('Enter a new password', 'error');
-  if (pw.length < 6) return toast('Password must be at least 6 characters', 'error');
-  if (pw !== pw2)    return toast('Passwords do not match', 'error');
-  const btn = document.getElementById('forgotSubmitBtn');
-  btn.disabled = true;
-  const r = await apiFetch('/auth/reset-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token: selfResetToken, new_password: pw })
-  }, false);
-  btn.disabled = false;
-  if (r) {
-    document.getElementById('selfResetFields')?.remove();
-    document.getElementById('forgotTitle').textContent = 'Password Updated';
-    document.getElementById('forgotSub').textContent   = 'Your password has been reset. You can now log in.';
-    btn.style.display = 'none';
-    selfResetToken = null;
-    setTimeout(() => { closeForgotModal(); }, 2000);
-  }
-}
-
-// ── TURNSTILE ────────────────────────────────────────────────────────────────
-let turnstileWidgetId = null, turnstileToken = "";
-function renderTurnstile() {
-  const el = document.getElementById('turnstileWidget');
-  el.innerHTML = '';
-  if (typeof turnstile === 'undefined' || !TURNSTILE_KEY || TURNSTILE_KEY === '%%TURNSTILE_SITE_KEY%%') return;
-  document.getElementById('modalSubmitBtn').disabled = true;
-  turnstileWidgetId = turnstile.render(el, {
-    sitekey: TURNSTILE_KEY, theme: 'dark',
-    callback: t => { turnstileToken = t; document.getElementById('modalSubmitBtn').disabled = false; },
-    'expired-callback': () => { turnstileToken = ''; document.getElementById('modalSubmitBtn').disabled = true; },
-  });
-}
-function resetTurnstile() {
-  turnstileToken = '';
-  if (turnstileWidgetId !== null && typeof turnstile !== 'undefined') turnstile.reset(turnstileWidgetId);
+  await fetchMe();
 }
 
 // ── AUTH ─────────────────────────────────────────────────────────────────────
@@ -135,80 +54,23 @@ function openModal(mode) {
   isLoginMode = mode === 'login';
   document.getElementById('authModal').classList.add('open');
   document.getElementById('modalTitle').textContent      = isLoginMode ? 'Login' : 'Register';
-  document.getElementById('modalSub').textContent        = isLoginMode ? 'Access the Global Ban System admin panel.' : 'New accounts require admin approval before access.';
+  document.getElementById('modalSub').textContent        = isLoginMode ? 'Access the moderation admin panel.' : 'New accounts require admin approval before access.';
   document.getElementById('modalSubmitBtn').textContent  = isLoginMode ? 'Login' : 'Register';
+  document.getElementById('modalSubmitBtn').style.display = '';
   document.getElementById('usernameField').style.display = isLoginMode ? 'none' : 'block';
   document.getElementById('toggleLabel').textContent     = isLoginMode ? 'Need an account? Register' : 'Have an account? Login';
-  document.getElementById('forgotLink').style.display    = isLoginMode ? '' : 'none';
-  renderTurnstile();
+  document.querySelector('#authModal .modal-footer .link-btn').onclick = toggleAuthMode;
 }
 function toggleAuthMode() { openModal(isLoginMode ? 'register' : 'login'); }
 document.getElementById('authModal').addEventListener('click', e => {});
-document.getElementById('forgotModal').addEventListener('click', e => {});
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.getElementById('resetModal').classList.remove('open');
 });
-
-let forgotTurnstileId  = null;
-let forgotTurnstileToken = '';
-
-function openForgotModal() {
-  document.getElementById('authModal').classList.remove('open');
-  document.getElementById('forgotTitle').textContent        = 'Reset Password';
-  document.getElementById('forgotSub').textContent          = "Enter your email and we'll send you a reset link.";
-  document.getElementById('forgotEmailField').style.display = '';
-  document.getElementById('forgotSubmitBtn').style.display  = '';
-  document.getElementById('forgotEmail').value              = '';
-  forgotTurnstileToken = '';
-  const container = document.getElementById('forgotTurnstile');
-  container.innerHTML = '';
-  if (typeof turnstile !== 'undefined' && TURNSTILE_KEY) {
-    forgotTurnstileId = turnstile.render(container, {
-      sitekey: TURNSTILE_KEY, theme: 'dark',
-      callback: t => { forgotTurnstileToken = t; }
-    });
-  }
-  document.getElementById('forgotModal').classList.add('open');
-}
-
-function closeForgotModal() {
-  document.getElementById('forgotModal').classList.remove('open');
-  if (forgotTurnstileId !== null && typeof turnstile !== 'undefined') {
-    try { turnstile.remove(forgotTurnstileId); } catch(e) {}
-    forgotTurnstileId = null;
-  }
-  document.getElementById('forgotTurnstile').innerHTML = '';
-  openModal('login');
-}
-
-async function submitForgotPassword() {
-  const email = document.getElementById('forgotEmail').value.trim();
-  if (!email) return toast('Enter your email', 'error');
-  if (TURNSTILE_KEY && !forgotTurnstileToken) return toast('Please complete the captcha', 'error');
-  const btn = document.getElementById('forgotSubmitBtn');
-  btn.disabled = true;
-  await apiFetch('/auth/forgot-password', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, turnstile_token: forgotTurnstileToken })
-  }, false);
-  btn.disabled = false;
-  document.getElementById('forgotTitle').textContent        = 'Check Your Email';
-  document.getElementById('forgotSub').textContent          = 'If that email is registered, a password reset link has been sent. Check your inbox.';
-  document.getElementById('forgotEmailField').style.display = 'none';
-  document.getElementById('forgotTurnstile').innerHTML      = '';
-  btn.style.display = 'none';
-}
-
-let _otpEmail = null;
 
 async function submitAuth() {
   const email    = document.getElementById('inputEmail').value.trim();
   const password = document.getElementById('inputPassword').value;
   if (!email || !password) return toast('Fill in all fields', 'error');
-  if (TURNSTILE_KEY && TURNSTILE_KEY !== '%%TURNSTILE_SITE_KEY%%' && !turnstileToken) {
-    return toast('Please complete the security check', 'error');
-  }
   const btn = document.getElementById('modalSubmitBtn');
   const originalText = btn.textContent;
   btn.disabled = true;
@@ -216,88 +78,45 @@ async function submitAuth() {
 
   if (isLoginMode) {
     const fd = new URLSearchParams();
-    fd.append('username', email); fd.append('password', password); fd.append('turnstile_token', turnstileToken);
+    fd.append('username', email); fd.append('password', password);
     const r = await apiFetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: fd.toString() }, false);
     btn.disabled = false;
     btn.textContent = originalText;
-    if (!r) { resetTurnstile(); return; }
-    if (r.requires_otp) {
-      _otpEmail = r.email;
-      document.getElementById('authModal').classList.remove('open');
-      openOtpModal();
-    } else {
-      token = r.access_token;
-      localStorage.setItem('gbs_token', token);
-      document.getElementById('authModal').classList.remove('open');
-      await fetchMe();
-      toast('Logged in', 'success');
-    }
+    if (!r) return;
+    document.getElementById('authModal').classList.remove('open');
+    await fetchMe();
+    toast('Logged in', 'success');
   } else {
     const username = document.getElementById('inputUsername').value.trim();
     if (!username) { btn.disabled = false; btn.textContent = originalText; return toast('Enter a username', 'error'); }
-    const r = await apiFetch('/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password, username, turnstile_token: turnstileToken }) }, false);
+    const r = await apiFetch('/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password, username }) }, false);
     btn.disabled = false;
     btn.textContent = originalText;
-    if (!r) { resetTurnstile(); return; }
-    document.getElementById('modalTitle').textContent = 'Check Your Email';
+    if (!r) return;
+    if (r.status === 'approved') {
+      const fd = new URLSearchParams();
+      fd.append('username', email); fd.append('password', password);
+      const loggedIn = await apiFetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: fd.toString() }, false);
+      if (loggedIn) {
+        document.getElementById('authModal').classList.remove('open');
+        await fetchMe();
+        toast('Account created and logged in', 'success');
+      }
+      return;
+    }
+    document.getElementById('modalTitle').textContent = 'Account Created';
     document.getElementById('modalSub').textContent   = r.message;
-    document.getElementById('turnstileWidget').innerHTML = '';
     document.getElementById('modalSubmitBtn').style.display = 'none';
-    document.querySelector('.modal-footer .link-btn').textContent = 'Resend verification email';
-    document.querySelector('.modal-footer .link-btn').onclick = async () => {
-      await apiFetch('/auth/resend-verification', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) }, false);
-      toast('Verification email resent', 'success');
-    };
+    document.getElementById('toggleLabel').textContent = 'Back to Login';
+    document.querySelector('#authModal .modal-footer .link-btn').onclick = () => openModal('login');
   }
-}
-
-function openOtpModal() {
-  document.getElementById('otpInput').value = '';
-  document.getElementById('otpError').textContent = '';
-  document.getElementById('otpModal').classList.add('open');
-  setTimeout(() => document.getElementById('otpInput').focus(), 100);
-}
-
-async function submitOtp() {
-  const otp = document.getElementById('otpInput').value.trim();
-  if (otp.length !== 6) return;
-  const btn = document.getElementById('otpSubmitBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="btn-spinner"></span>Verifying...';
-  const r = await apiFetch('/auth/verify-otp', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ email: _otpEmail, otp })
-  }, false);
-  btn.disabled = false;
-  btn.innerHTML = 'Verify';
-  if (!r) {
-    document.getElementById('otpInput').value = '';
-    document.getElementById('otpInput').focus();
-    return;
-  }
-  token = r.access_token;
-  localStorage.setItem('gbs_token', token);
-  document.getElementById('otpModal').classList.remove('open');
-  _otpEmail = null;
-  await fetchMe();
-  toast('Logged in', 'success');
-}
-
-async function resendOtp() {
-  if (!_otpEmail) return;
-  await apiFetch('/auth/resend-otp', {
-    method: 'POST', headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ email: _otpEmail, otp: '' })
-  }, false);
-  toast('New code sent to your email', 'success');
 }
 
 async function fetchMe() {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const headers = { 'Authorization': `Bearer ${token}` };
-      const res = await fetch(API + '/auth/me', { headers });
-      if (res.status === 401 || res.status === 403) { logout(); return; }
+      const res = await fetch(API + '/auth/me', { credentials: 'same-origin' });
+      if (res.status === 401 || res.status === 403) { currentUser = null; return; }
       if (!res.ok) { await new Promise(r => setTimeout(r, 3000)); continue; }
       const user = await res.json();
       currentUser = user;
@@ -327,16 +146,10 @@ async function fetchMe() {
 }
 
 async function logout() {
-  if (token) {
-    try {
-      await fetch(API + '/auth/logout', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-    } catch {}
-  }
-  token = null; currentUser = null;
-  localStorage.removeItem('gbs_token');
+  try {
+    await fetch(API + '/auth/logout', { method: 'POST', credentials: 'same-origin' });
+  } catch {}
+  currentUser = null;
   document.getElementById('adminPanel').style.setProperty('display', 'none', 'important');
   document.getElementById('groupAdminPanel').style.setProperty('display', 'none', 'important');
   document.getElementById('rulesPanel').style.setProperty('display', 'none', 'important');
@@ -857,11 +670,7 @@ const ACTION_META = {
   'user.password_reset':    { label: 'Password Reset', cls: 'user-action' },
   'auth.login':             { label: 'Login',          cls: 'auth' },
   'auth.logout':            { label: 'Logout',         cls: 'auth' },
-  'auth.otp_sent':          { label: 'OTP Sent',       cls: 'auth' },
   'auth.register':          { label: 'Register',       cls: 'auth' },
-  'auth.email_verified':    { label: 'Email Verified', cls: 'auth' },
-  'auth.password_reset_requested': { label: 'PW Reset Req',  cls: 'auth' },
-  'auth.password_reset_completed': { label: 'PW Reset Done', cls: 'user-action' },
 };
 
 async function loadLogs() {
@@ -983,7 +792,6 @@ async function submitResetPassword() {
   }
 }
 
-document.getElementById('otpModal').addEventListener('click', e => {});
 document.getElementById('bulkEditModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 document.getElementById('editModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
 document.getElementById('resetModal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.remove('open'); });
@@ -1175,7 +983,7 @@ function localEditGroups(groupIds, message) {
   applyGroupFilter();
 }
 
-// ── GBS RULES AGREEMENT ───────────────────────────────────────────────────────
+// ── RULES AGREEMENT ───────────────────────────────────────────────────────────
 let _rulesAgreed = false;
 
 function agreeToRules() {
@@ -1337,9 +1145,8 @@ function switchTab(tab, el) {
 // ── API HELPER ────────────────────────────────────────────────────────────────
 async function apiFetch(path, opts = {}, withAuth = true) {
   const headers = { ...(opts.headers || {}) };
-  if (withAuth && token) headers['Authorization'] = `Bearer ${token}`;
   try {
-    const res  = await fetch(API + path, { ...opts, headers });
+    const res  = await fetch(API + path, { ...opts, headers, credentials: 'same-origin' });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       const msg = Array.isArray(data.detail)
@@ -1407,8 +1214,108 @@ document.getElementById('categoryFilter').addEventListener('change', () => {
 });
 
 // ── COPY SCRIPT ───────────────────────────────────────────────────────────────
-const GBS_SCRIPT_URL = 'https://database.unknown-technologies.us/GBS_Script.luau';
-let _rawScriptText = '';
+const GBS_SCRIPT_URL = '';
+let _rawScriptText = `-- Moderation Registry sample
+-- Fetches user and group bans, then backs up both tables in DataStore.
+-- Replace the URLs with URLs your Roblox server can reach.
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local DataStoreService = game:GetService("DataStoreService")
+
+local USER_BANS_URL = "http://127.0.0.1:2949/BannedUsers.json"
+local GROUP_BANS_URL = "http://127.0.0.1:2949/BannedGroups.json"
+local BACKUP_STORE = DataStoreService:GetDataStore("ModerationRegistryBackup")
+
+local USER_BACKUP_KEY = "BannedUsers"
+local GROUP_BACKUP_KEY = "BannedGroups"
+
+local function countKeys(dictionary)
+    local count = 0
+    for _ in pairs(dictionary) do
+        count += 1
+    end
+    return count
+end
+
+local function recordsToLookup(records, idField)
+    local lookup = {}
+    for _, record in ipairs(records or {}) do
+        local id = record[idField]
+        if id then
+            lookup[tostring(id)] = record.message or "Removed from this experience"
+        end
+    end
+    return lookup
+end
+
+local function readBackup(key, idField, label)
+    local ok, records = pcall(function()
+        return BACKUP_STORE:GetAsync(key)
+    end)
+    if ok and type(records) == "table" then
+        warn("Using cached moderation registry backup for", label)
+        return recordsToLookup(records, idField)
+    end
+    warn("Moderation registry unavailable and no backup was found for", label)
+    return {}
+end
+
+local function writeBackup(key, records)
+    task.spawn(function()
+        local ok, err = pcall(function()
+            BACKUP_STORE:SetAsync(key, records)
+        end)
+        if not ok then
+            warn("Failed to update moderation registry backup:", err)
+        end
+    end)
+end
+
+local function loadRecords(url, backupKey, idField, label)
+    local ok, body = pcall(function()
+        return HttpService:GetAsync(url, true)
+    end)
+    if not ok then
+        return readBackup(backupKey, idField, label)
+    end
+    local decoded, records = pcall(function()
+        return HttpService:JSONDecode(body)
+    end)
+    if not decoded or type(records) ~= "table" then
+        return readBackup(backupKey, idField, label)
+    end
+    writeBackup(backupKey, records)
+    return recordsToLookup(records, idField)
+end
+
+local userBans = loadRecords(USER_BANS_URL, USER_BACKUP_KEY, "userId", "users")
+local groupBans = loadRecords(GROUP_BANS_URL, GROUP_BACKUP_KEY, "groupId", "groups")
+print("Moderation Registry loaded", countKeys(userBans), "user bans and", countKeys(groupBans), "group bans")
+
+local function getGroupBanReason(player)
+    for groupId, reason in pairs(groupBans) do
+        local numericGroupId = tonumber(groupId)
+        if numericGroupId and player:IsInGroup(numericGroupId) then
+            return reason
+        end
+    end
+    return nil
+end
+
+local function checkPlayer(player)
+    print("Moderation Registry checking", player.Name, player.UserId)
+    local reason = userBans[tostring(player.UserId)] or getGroupBanReason(player)
+    if reason then
+        player:Kick(reason)
+    end
+end
+
+Players.PlayerAdded:Connect(checkPlayer)
+
+for _, player in ipairs(Players:GetPlayers()) do
+    task.defer(checkPlayer, player)
+end`;
 
 function copyScript() {
   if (!_rawScriptText) return toast('Script not loaded yet', 'error');
@@ -1428,6 +1335,11 @@ function copyScript() {
 document.addEventListener('DOMContentLoaded', async function() {
   const el = document.getElementById('scriptCode');
   if (!el) return;
+  if (!GBS_SCRIPT_URL) {
+    el.textContent = _rawScriptText;
+    if (typeof hljs !== 'undefined') hljs.highlightElement(el);
+    return;
+  }
   try {
     const res = await fetch(GBS_SCRIPT_URL);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -1435,7 +1347,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     el.textContent = _rawScriptText;
     if (typeof hljs !== 'undefined') hljs.highlightElement(el);
   } catch(e) {
-    el.textContent = `-- Failed to load script: ${e.message}\n-- Download directly from:\n-- ${GBS_SCRIPT_URL}`;
+    el.textContent = `-- Failed to load script: ${e.message}`;
   }
 });
 
@@ -1443,7 +1355,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 function _showConsoleWarning() {
   console.log('%c⚠ Hold Up!', 'color:#e03030;font-size:64px;font-weight:900;');
   console.log('%cIf someone told you to copy/paste something here, you are almost certainly being scammed.', 'color:#ffffff;font-size:16px;font-weight:600;');
-  console.log('%cPasting anything here could give attackers full access to your GBS account, ban list, and staff panel.', 'color:#e03030;font-size:14px;font-weight:700;');
+  console.log('%cPasting anything here could give attackers full access to your account, ban list, and staff panel.', 'color:#e03030;font-size:14px;font-weight:700;');
   console.log('%cIf you are a developer and know what you are doing, carry on.', 'color:#5a6070;font-size:12px;');
 }
 _showConsoleWarning();
